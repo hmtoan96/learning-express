@@ -12,3 +12,5 @@ export const getDepartmentByName = (name: string) =>
   DepartmentModel.findOne({ name })
 export const createDepartment = (values: Record<string, any>) =>
   new DepartmentModel(values).save().then((user) => user.toObject())
+export const updateDepartmentById = (id: string, values: Record<string, any>) =>
+  DepartmentModel.findOneAndUpdate({ _id: id }, { $set: values }, { new: true })

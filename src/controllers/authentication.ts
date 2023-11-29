@@ -10,25 +10,26 @@ import { authentication, random } from '../helpers'
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { email, password, username } = req.body
-    console.log(password)
+
     if (!email || !password || !username) {
       return res.sendStatus(400)
     }
+
     const existingUser = await getUserByEmail(email)
+
     if (existingUser) {
       return res.sendStatus(400)
     }
+
     const salt = random()
     const user = await createUser({
       email,
       username,
       authentication: {
         salt,
-        sessionToken: '4@dmiN0nly',
-        password,
+        password: authentication(salt, password),
       },
     })
-
     return res.status(200).json(user).end()
   } catch (error) {
     console.log(error)
@@ -42,37 +43,24 @@ export const login = async (req: express.Request, res: express.Response) => {
     if (!email || !password) {
       return res.sendStatus(400)
     }
-    // const user = await getUserByEmail(email).select(
-    //   'authentication.salt + authentication.password',
-    // )
-    // if (!user) {
-    //   return res.sendStatus(400)
-    // }
-
-    // const expectedHash = authentication(user.authentication.salt, password)
-    // if (user.authentication.password !== expectedHash) {
-    //   return res.sendStatus(403)
-    // }
-    // const salt = random()
-    // user.authentication.sessionToken = authentication(salt, user._id.toString())
-    // await user.save()
-
-    const user = await getUserByEmail(email).select('authentication.password')
-    user.authentication.sessionToken = '4@dmiN0nly'
+    const user = await getUserByEmail(email).select(
+      '+authentication.salt +authentication.password',
+    )
     if (!user) {
-      return res.sendStatus(400)
+      return res.status(400).send('Không có user!')
     }
-    // res.cookie('UACv-AUTH', user.authentication.sessionToken, {
-    //   domain: 'localhost',
-    //   path: '/',
-    // })
-    res.cookie('UACv-AUTH', user.authentication.sessionToken, {
+    const expectedHash = authentication(user.authentication.salt, password)
+    if (user.authentication.password != expectedHash) {
+      return res.status(403).send('Tài khoản hoặc mật khẩu không đúng')
+    }
+
+    const salt = random()
+    user.authentication.sessionToken = authentication(salt, user._id.toString())
+    await user.save()
+    res.cookie('uacv-auth', user.authentication.sessionToken, {
       domain: 'localhost',
       path: '/',
     })
-    if (user.authentication.password !== password) {
-      return res.sendStatus(403)
-    }
     return res.status(200).json(user).end()
   } catch (error) {
     console.log(error)
@@ -89,10 +77,6 @@ export const reset = async (req: express.Request, res: express.Response) => {
     const user = await getUserById(id)
     if (!user) {
       return res.sendStatus(400)
-    }
-    user.authentication = {
-      ...user.authentication,
-      password: authentication(user.authentication.salt, '123123'),
     }
     await user.save()
     return res.status(200).json(user).end()

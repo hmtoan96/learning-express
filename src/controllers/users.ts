@@ -1,6 +1,12 @@
 import express from 'express'
 
-import { getUsers, deleteUserById, getUserById } from '../db/users'
+import {
+  UserModel,
+  getUsers,
+  deleteUserById,
+  getUserById,
+  updateUserById,
+} from '../db/users'
 
 export const getAllUsers = async (
   req: express.Request,
@@ -33,14 +39,40 @@ export const updateUser = async (
 ) => {
   try {
     const { id } = req.params
-    const { username } = req.params
-    if (!username) {
+    if (!id) {
       return res.sendStatus(400)
     }
-    const user = await getUserById(id)
-    user.username = username
-    await user.save()
+    const existingUser = await getUserById(id)
+    if (!existingUser) {
+      return res.sendStatus(400)
+    }
+    const user = await updateUserById(id, req.body)
     return res.status(200).json(user).end()
+  } catch (err) {
+    console.log(err)
+    return res.sendStatus(400)
+  }
+}
+
+export const updateSchema = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    UserModel.updateMany(
+      {},
+      {
+        department: 'IT',
+      },
+    )
+      .then(() => {
+        console.log('Cập nhật thành công')
+        return res.status(200).end()
+      })
+      .catch((err) => {
+        console.log('Lỗi khi cập nhật: ', err)
+        return res.sendStatus(400)
+      })
   } catch (err) {
     console.log(err)
     return res.sendStatus(400)

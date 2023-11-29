@@ -3,6 +3,8 @@ import {
   getDepartments,
   getDepartmentByName,
   createDepartment,
+  getDepartmentById,
+  updateDepartmentById,
 } from '../db/departments'
 
 export const getAllDepartment = async (
@@ -36,5 +38,24 @@ export const registerDepartment = async (
   } catch (err) {
     res.sendStatus(400)
     console.log(err)
+  }
+}
+
+export const updateDepartment = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { id } = req.params
+    const values = req.body
+    const existingDepartment = await getDepartmentById(id)
+    if (!existingDepartment) {
+      return res.sendStatus(400)
+    }
+    const department = await updateDepartmentById(id, values)
+    return res.status(200).json(department).end()
+  } catch (err) {
+    console.log(err)
+    return res.sendStatus(400)
   }
 }

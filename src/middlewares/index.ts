@@ -28,14 +28,13 @@ export const isAuthenticated = async (
   next: express.NextFunction,
 ) => {
   try {
-    const sessionToken = req.cookies['UACv-AUTH']
-    console.log(sessionToken)
+    const sessionToken = req.cookies['uacv-auth']
     if (!sessionToken) {
       return res.sendStatus(403)
     }
 
     const existingUser = await getUserBySessionToken(sessionToken)
-    console.log(existingUser)
+
     if (!existingUser) {
       return res.sendStatus(403)
     }
