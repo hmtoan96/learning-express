@@ -1,34 +1,46 @@
 import express from 'express'
+import * as z from 'zod'
 import {
   createUser,
   getUserByEmail,
   getUserById,
   updateUserById,
 } from '../db/users'
+import { User } from '../models/users'
+
 import { authentication, random } from '../helpers'
+
+const userSchema = z.object({
+  username: z.string().min(1, 'Username is required').max(100),
+  name: z.string(),
+  email: z.string().min(1, 'Email is required').email('Invalid Email'),
+  password: z.string().min(1, 'Password is required'),
+})
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
-    const { email, password, username } = req.body
+    const { email, password, username, name } = userSchema.parse(req.body)
 
     if (!email || !password || !username) {
       return res.sendStatus(400)
     }
 
-    const existingUser = await getUserByEmail(email)
-
-    if (existingUser) {
+    const existingUserByEmail = await User.getUserByEmail(email)
+    if (existingUserByEmail) {
       return res.sendStatus(400)
     }
 
-    const salt = random()
-    const user = await createUser({
+    const existingUserByUsername = await User.getUserByUsername(username)
+    if (existingUserByUsername) {
+      return res.sendStatus(400)
+    }
+
+    const hashedPassword = authentication(password)
+    const user = await User.createUser({
       email,
+      name,
       username,
-      authentication: {
-        salt,
-        password: authentication(salt, password),
-      },
+      password: hashedPassword,
     })
     return res.status(200).json(user).end()
   } catch (error) {
@@ -49,13 +61,13 @@ export const login = async (req: express.Request, res: express.Response) => {
     if (!user) {
       return res.status(400).send('Không có user!')
     }
-    const expectedHash = authentication(user.authentication.salt, password)
+    const expectedHash = authentication(password)
     if (user.authentication.password != expectedHash) {
       return res.status(403).send('Tài khoản hoặc mật khẩu không đúng')
     }
 
     const salt = random()
-    user.authentication.sessionToken = authentication(salt, user._id.toString())
+    user.authentication.sessionToken = authentication(user._id.toString())
     await user.save()
     res.cookie('uacv-auth', user.authentication.sessionToken, {
       domain: 'localhost',

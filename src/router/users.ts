@@ -5,11 +5,13 @@ import {
   deleteUser,
   updateUser,
   updateSchema,
+  getUserProfile,
 } from '../controllers/users'
 
 export default (router: express.Router) => {
-  router.get('/users', isAuthenticated, getAllUsers)
-  router.delete('/users/:id', isAuthenticated, isOwner, deleteUser)
-  router.patch('/users/:id', isAuthenticated, isOwner, updateUser)
+  router.get('/users', getAllUsers)
+  router.get('/users/:username', getUserProfile)
+  router.delete('/users/:username', isAuthenticated, isOwner, deleteUser)
+  router.patch('/users/:username', isAuthenticated, isOwner, updateUser)
   router.get('/users/update-schema', isAuthenticated, updateSchema)
 }

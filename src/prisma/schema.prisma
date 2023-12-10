@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:Dieuhuong@233@db.nyarcgtakjssycbfwgbx.supabase.co:5432/postgres"
+}
+
+model User {
+  id        Int          @id @default(autoincrement())
+  email     String       @unique
+  username  String       @unique
+  name      String?
+  password  String
+  createAt  DateTime     @default(now())
+  udpatedAt DateTime     @default(now())
+  isLocked  Boolean      @default(false)
+  isDeleted Boolean      @default(false)
+  profile   UserProfile?
+  job       Job?
+}
+
+model UserProfile {
+  id           Int      @id @default(autoincrement())
+  dayOfBirth   DateTime
+  bio          String
+  createAt     DateTime @default(now())
+  updateAt     DateTime @default(now())
+  user         User     @relation(fields: [userUsername], references: [username])
+  userUsername String   @unique
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  description String
+  isAprrove   Boolean  @default(false)
+  createAt    DateTime @default(now())
+  udpatedAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int      @unique
+}

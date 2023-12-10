@@ -8,12 +8,15 @@ import {
   updateUserById,
 } from '../db/users'
 
+import { User } from '../models/users'
+import { UserProfile } from '../models/profile'
+
 export const getAllUsers = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const users = await getUsers()
+    const users = await User.getAllUsers()
     return res.status(200).json(users)
   } catch (err) {
     console.log(err)
@@ -75,6 +78,27 @@ export const updateSchema = async (
       })
   } catch (err) {
     console.log(err)
+    return res.sendStatus(400)
+  }
+}
+
+export const getUserProfile = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { username } = req.params
+    const existingUser = await User.getUserByUsername(username)
+    if (!existingUser) {
+      return res.sendStatus(400)
+    }
+    const userProfile = await UserProfile.getProfileByUsername(username)
+    if (!userProfile) {
+      return res.sendStatus(400)
+    }
+    return res.status(200).json(userProfile).end()
+  } catch (error) {
+    console.log(error)
     return res.sendStatus(400)
   }
 }
