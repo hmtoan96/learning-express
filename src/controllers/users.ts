@@ -9,7 +9,6 @@ import {
 } from '../db/users'
 
 import { User } from '../models/users'
-import { UserProfile } from '../models/profile'
 
 export const getAllUsers = async (
   req: express.Request,
@@ -28,9 +27,16 @@ export const deleteUser = async (
   res: express.Response,
 ) => {
   try {
-    const { id } = req.params
-    const deleteUser = await deleteUserById(id)
-    return res.status(200).json(deleteUser)
+    const { username } = req.params
+    const existingUser = await User.getUserByUsername(username)
+    if (!existingUser) {
+      return res.sendStatus(404)
+    }
+    const deleteUser = await User.softDeleteUserByUsername(username)
+    if (!deleteUser) {
+      return res.sendStatus(404)
+    }
+    return res.status(200).json(deleteUser).end()
   } catch (err) {
     return res.sendStatus(400)
   }
@@ -41,15 +47,15 @@ export const updateUser = async (
   res: express.Response,
 ) => {
   try {
-    const { id } = req.params
-    if (!id) {
+    const { username } = req.params
+    if (!username) {
       return res.sendStatus(400)
     }
-    const existingUser = await getUserById(id)
+    const existingUser = await User.getUserByUsername(username)
     if (!existingUser) {
       return res.sendStatus(400)
     }
-    const user = await updateUserById(id, req.body)
+    const user = await User.updateUserByUsername(username, req.body)
     return res.status(200).json(user).end()
   } catch (err) {
     console.log(err)
@@ -92,7 +98,7 @@ export const getUserProfile = async (
     if (!existingUser) {
       return res.sendStatus(400)
     }
-    const userProfile = await UserProfile.getProfileByUsername(username)
+    const userProfile = await User.getProfileByUsername(username)
     if (!userProfile) {
       return res.sendStatus(400)
     }

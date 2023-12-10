@@ -32,13 +32,24 @@ export const isAuthenticated = async (
     if (!sessionToken) {
       return res.sendStatus(403)
     }
-
     const existingUser = await getUserBySessionToken(sessionToken)
-    console.log(existingUser)
     if (!existingUser) {
       return res.sendStatus(403)
     }
     merge(req, { identity: existingUser })
     next()
   } catch (err) {}
+}
+
+export const updatedAt = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    merge(req, { updateAt: new Date() })
+    next()
+  } catch (error) {
+    console.log(error)
+  }
 }

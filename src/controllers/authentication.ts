@@ -55,25 +55,12 @@ export const login = async (req: express.Request, res: express.Response) => {
     if (!email || !password) {
       return res.sendStatus(400)
     }
-    const user = await getUserByEmail(email).select(
-      '+authentication.salt +authentication.password',
-    )
-    if (!user) {
-      return res.status(400).send('Không có user!')
-    }
-    const expectedHash = authentication(password)
-    if (user.authentication.password != expectedHash) {
-      return res.status(403).send('Tài khoản hoặc mật khẩu không đúng')
+    const existingUser = await User.getUserByEmail(email)
+    if (!existingUser) {
+      return res.sendStatus(400)
     }
 
-    const salt = random()
-    user.authentication.sessionToken = authentication(user._id.toString())
-    await user.save()
-    res.cookie('uacv-auth', user.authentication.sessionToken, {
-      domain: 'localhost',
-      path: '/',
-    })
-    return res.status(200).json(user).end()
+    return res.status(200).json(existingUser).end()
   } catch (error) {
     console.log(error)
     return res.sendStatus(400)
